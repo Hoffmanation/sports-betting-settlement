@@ -54,26 +54,26 @@ services:
       timeout: 5s
       retries: 20
 
-#  app:
-#    build: .
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      DB_HOST: postgres
-#      DB_PORT: 5432
-#      DB_NAME: sports_betting_db
-#      DB_USER: sports_betting_user
-#      DB_PASSWORD: sports_betting_pass
-#      REDIS_HOST: redis
-#      REDIS_PORT: 6379
-#      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#      kafka:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sports_betting_db
+      DB_USER: sports_betting_user
+      DB_PASSWORD: sports_betting_pass
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:

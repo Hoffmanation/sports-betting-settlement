@@ -64,13 +64,21 @@ src/main/java/com/sportsbetting
 
 Prerequisites: Java 25, Maven 3.9+, Docker, and Docker Compose.
 
-Start the infrastructure services from the project directory:
+You can: 
+
+- Start the application including all services from the project directory:
+
+
+```bash
+docker compose up -d
+```
+- Or start only infrastructure services from the project directory:
 
 ```bash
 docker compose up -d postgres redis kafka
 ```
 
-Then start the application locally:
+And then start the application locally:
 
 ```bash
 mvn spring-boot:run
