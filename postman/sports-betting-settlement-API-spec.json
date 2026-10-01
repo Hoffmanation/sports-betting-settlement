@@ -1,0 +1,478 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sports Betting Settlement API",
+    "description": "Place bets, publish sports event outcomes to Kafka, and inspect asynchronous bet settlements.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Bets",
+      "description": "Create bets and inspect their asynchronous settlement status"
+    },
+    {
+      "name": "Event outcomes",
+      "description": "Publish final sports event outcomes to Kafka for bet settlement"
+    }
+  ],
+  "paths": {
+    "/api/v1/event-outcomes": {
+      "post": {
+        "tags": [
+          "Event outcomes"
+        ],
+        "summary": "Publish an event outcome",
+        "description": "Publishes the event ID, name, and winner ID to the Kafka event-outcomes topic. Matching bets are queued for asynchronous settlement.",
+        "operationId": "publishOutcome",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishEventOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Outcome acknowledged by Kafka",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishEventOutcomeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid event outcome",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Kafka is unavailable",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bets": {
+      "get": {
+        "tags": [
+          "Bets"
+        ],
+        "summary": "List bets",
+        "description": "Returns a page of bets, optionally filtered by event identifier.",
+        "operationId": "getBets",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "query",
+            "description": "Optional event identifier filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "match-42"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0,
+              "minimum": 0
+            },
+            "example": 0
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Page size (1-100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of bets",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BetPageResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Bets"
+        ],
+        "summary": "Place a bet",
+        "description": "Publishes a bet creation command to Kafka. The bet is persisted asynchronously by this service and becomes available to read after the command is consumed.",
+        "operationId": "createBet",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Bet creation command accepted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BetCommandAcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid bet request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Kafka is unavailable",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bets/{betId}": {
+      "get": {
+        "tags": [
+          "Bets"
+        ],
+        "summary": "Get a bet",
+        "description": "Returns a bet, including its current OPEN, WON, or LOST status.",
+        "operationId": "getBet",
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "description": "Bet identifier",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "fd6b6e70-8d0b-4dda-bab5-2320d2ad4d39"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bet found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BetResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bet not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PublishEventOutcomeRequest": {
+        "type": "object",
+        "description": "Final result of a sports event",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "Unique sports event identifier",
+            "example": "match-42",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "eventName": {
+            "type": "string",
+            "description": "Display name of the event",
+            "example": "Championship Final",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "winnerId": {
+            "type": "string",
+            "description": "Identifier of the event winner",
+            "example": "player-a",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "eventId",
+          "eventName",
+          "winnerId"
+        ]
+      },
+      "PublishEventOutcomeResponse": {
+        "type": "object",
+        "description": "Acknowledgement that the event outcome was accepted by Kafka",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "example": "match-42"
+          },
+          "status": {
+            "type": "string",
+            "example": "PUBLISHED"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-28T09:00:00Z"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "description": "Structured API error response",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateBetRequest": {
+        "type": "object",
+        "description": "A user's selection and stake for a sports event",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Identifier of the user placing the bet",
+            "example": "user-1",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Identifier of the sports event",
+            "example": "match-42",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "eventMarketId": {
+            "type": "string",
+            "description": "Identifier of the market within the event",
+            "example": "winner-market",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "selectedWinnerId": {
+            "type": "string",
+            "description": "Identifier of the participant selected to win",
+            "example": "player-a",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "amount": {
+            "type": "number",
+            "description": "Stake amount; must be greater than zero",
+            "example": 10.0,
+            "minimum": 0.00
+          }
+        },
+        "required": [
+          "amount",
+          "eventId",
+          "eventMarketId",
+          "selectedWinnerId",
+          "userId"
+        ]
+      },
+      "BetCommandAcceptedResponse": {
+        "type": "object",
+        "description": "Acknowledgement that a bet creation command was accepted",
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "fd6b6e70-8d0b-4dda-bab5-2320d2ad4d39",
+            "readOnly": true
+          },
+          "betId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "a6fd7c84-b949-4d9d-bf5c-2a57e92cf490",
+            "readOnly": true
+          },
+          "commandType": {
+            "type": "string",
+            "example": "BET_CREATE_REQUESTED"
+          },
+          "acceptedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-01T09:00:00Z",
+            "readOnly": true
+          }
+        }
+      },
+      "BetPageResponse": {
+        "type": "object",
+        "description": "Page of bets and pagination metadata",
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "Bets in the requested page",
+            "items": {
+              "$ref": "#/components/schemas/BetResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "example": 0
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "example": 20
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64",
+            "example": 47
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "example": 3
+          },
+          "first": {
+            "type": "boolean",
+            "example": true
+          },
+          "last": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "BetResponse": {
+        "type": "object",
+        "description": "Bet details and current settlement status",
+        "properties": {
+          "betId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "fd6b6e70-8d0b-4dda-bab5-2320d2ad4d39",
+            "readOnly": true
+          },
+          "userId": {
+            "type": "string",
+            "example": "user-1"
+          },
+          "eventId": {
+            "type": "string",
+            "example": "match-42"
+          },
+          "eventMarketId": {
+            "type": "string",
+            "example": "winner-market"
+          },
+          "selectedWinnerId": {
+            "type": "string",
+            "example": "player-a"
+          },
+          "amount": {
+            "type": "number",
+            "example": 10.0
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "WON",
+              "LOST"
+            ],
+            "example": "WON"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-28T09:00:00Z",
+            "readOnly": true
+          },
+          "settledAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-28T09:05:00Z",
+            "readOnly": true
+          }
+        }
+      }
+    }
+  }
+}
