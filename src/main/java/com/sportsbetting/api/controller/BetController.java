@@ -33,7 +33,8 @@ public class BetController implements BetApi {
     @Override
     public ResponseEntity<BetResponse> getBet(UUID betId) {
         log.info("Fetching bet {}", betId);
-        return ResponseEntity.ok(betMapper.toResponse(betApplicationService.getBet(betId)));
+        var bet = betApplicationService.getBet(betId);
+        return ResponseEntity.ok(betMapper.toResponse(bet));
     }
 
     @Override
