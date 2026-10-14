@@ -4,6 +4,7 @@ import com.sportsbetting.api.model.PublishEventOutcomeRequest;
 import com.sportsbetting.api.model.PublishEventOutcomeResponse;
 import com.sportsbetting.application.port.EventOutcomePublisher;
 import com.sportsbetting.domain.mapper.BetMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,7 @@ public class EventOutcomeController implements EventOutcomeApi {
     private final BetMapper betMapper;
 
     @Override
-    public ResponseEntity<PublishEventOutcomeResponse> publishOutcome(PublishEventOutcomeRequest request) {
+    public ResponseEntity<PublishEventOutcomeResponse> publishOutcome(@Valid PublishEventOutcomeRequest request) {
         var outcome = betMapper.toDomain(request);
         eventOutcomePublisher.publish(outcome);
         log.info("Accepted event outcome for event {}", outcome.eventId());

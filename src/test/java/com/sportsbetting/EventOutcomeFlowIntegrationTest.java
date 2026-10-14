@@ -120,6 +120,35 @@ class EventOutcomeFlowIntegrationTest {
         assertThat(get("/api/v1/bets?page=-1&size=2").statusCode()).isEqualTo(400);
     }
 
+    @Test
+    void rejectsRequestsThatViolateDtoConstraints() throws Exception {
+        var invalidBetResponse = postJson("/api/v1/bets", """
+            {
+              "userId": "user-1",
+              "eventId": "match-42",
+              "eventMarketId": "winner-market",
+              "selectedWinnerId": "player-a",
+              "amount": 0
+            }
+            """);
+        assertThat(invalidBetResponse.statusCode()).isEqualTo(400);
+        assertThat(invalidBetResponse.body())
+            .contains("REQUEST_VALIDATION_FAILED")
+            .contains("must be greater than 0");
+
+        var invalidOutcomeResponse = postJson("/api/v1/event-outcomes", """
+            {
+              "eventId": " ",
+              "eventName": "Championship Final",
+              "winnerId": "player-a"
+            }
+            """);
+        assertThat(invalidOutcomeResponse.statusCode()).isEqualTo(400);
+        assertThat(invalidOutcomeResponse.body())
+            .contains("REQUEST_VALIDATION_FAILED")
+            .contains("must not be blank");
+    }
+
     private BetCommandAcceptedResponse createBet(String eventId, String userId, String winnerId, String amount) throws Exception {
         var response = postJson("/api/v1/bets", """
             {

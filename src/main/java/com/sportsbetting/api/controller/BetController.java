@@ -6,6 +6,7 @@ import com.sportsbetting.api.model.BetCommandAcceptedResponse;
 import com.sportsbetting.api.model.CreateBetRequest;
 import com.sportsbetting.application.service.BetApplicationService;
 import com.sportsbetting.domain.mapper.BetMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class BetController implements BetApi {
     private final BetMapper betMapper;
 
     @Override
-    public ResponseEntity<BetCommandAcceptedResponse> createBet(CreateBetRequest request) {
+    public ResponseEntity<BetCommandAcceptedResponse> createBet(@Valid CreateBetRequest request) {
         var accepted = betApplicationService.requestBetCreation(betMapper.toDomain(request));
         log.info("Accepted bet command {} for bet {}", accepted.commandId(), accepted.betId());
         return ResponseEntity.accepted().body(betMapper.toCommandAcceptedResponse(accepted));

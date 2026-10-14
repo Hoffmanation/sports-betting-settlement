@@ -38,7 +38,6 @@ public class CreateBetRequest {
 
     @NotNull
     @Positive
-    @DecimalMin(value = "0.00", inclusive = false)
     @Schema(description = "Stake amount; must be greater than zero", example = "10.00", requiredMode = Schema.RequiredMode.REQUIRED)
     private BigDecimal amount;
 }
