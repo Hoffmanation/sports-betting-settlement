@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,7 +18,6 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 @Entity
-@DynamicUpdate
 @Table(name = "bets", indexes = {
     @Index(name = "idx_bets_event_status_created", columnList = "event_id,status,created_at,id")
 })

@@ -2,6 +2,7 @@ package com.sportsbetting.api.controller;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.sportsbetting.domain.exception.BetNotFoundException;
+import com.sportsbetting.domain.exception.EventOutcomeConflictException;
 import com.sportsbetting.integration.kafka.KafkaPublishException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -64,6 +65,15 @@ public class ApiExceptionHandler extends RequestBodyAdviceAdapter {
         var errorMessage = exception.getMessage();
         logErrorContext(errorMessage, buildErrorContextForStructualLog(status), exception);
         var errorResponse = ErrorResponse.of(status, "BET_NOT_FOUND", errorMessage, null, null);
+        return ResponseEntity.status(status).body(errorResponse);
+    }
+
+    @ExceptionHandler(EventOutcomeConflictException.class)
+    public ResponseEntity<ErrorResponse> handleEventOutcomeConflict(EventOutcomeConflictException exception) {
+        var status = HttpStatus.CONFLICT;
+        var errorMessage = exception.getMessage();
+        logErrorContext(errorMessage, buildErrorContextForStructualLog(status), exception);
+        var errorResponse = ErrorResponse.of(status, "EVENT_OUTCOME_CONFLICT", errorMessage, null, null);
         return ResponseEntity.status(status).body(errorResponse);
     }
 

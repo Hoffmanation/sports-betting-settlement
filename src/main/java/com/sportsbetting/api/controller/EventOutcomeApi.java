@@ -13,17 +13,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@Tag(name = "Event outcomes", description = "Publish final sports event outcomes to Kafka for bet settlement")
+@Tag(name = "Event outcomes", description = "Publish one official result per event to Kafka for bet settlement")
 @RequestMapping("/api/v1/event-outcomes")
 public interface EventOutcomeApi {
 
     @PostMapping
     @Operation(
         summary = "Publish an event outcome",
-        description = "Publishes the event ID, name, and winner ID to the Kafka event-outcomes topic. Matching bets are queued for asynchronous settlement."
+        description = "Publishes the first outcome for an event. A repeated identical result is ignored; a different winner is rejected."
     )
     @ApiResponse(responseCode = "202", description = "Outcome acknowledged by Kafka", content = @Content(schema = @Schema(implementation = PublishEventOutcomeResponse.class)))
+    @ApiResponse(responseCode = "200", description = "Outcome was already published with the same winner", content = @Content(schema = @Schema(implementation = PublishEventOutcomeResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid event outcome", content = @Content(schema = @Schema(implementation = ApiExceptionHandler.ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "A different winner was already recorded for this event", content = @Content(schema = @Schema(implementation = ApiExceptionHandler.ErrorResponse.class)))
     @ApiResponse(responseCode = "503", description = "Kafka is unavailable", content = @Content(schema = @Schema(implementation = ApiExceptionHandler.ErrorResponse.class)))
     ResponseEntity<PublishEventOutcomeResponse> publishOutcome(@Valid @RequestBody PublishEventOutcomeRequest request);
 }

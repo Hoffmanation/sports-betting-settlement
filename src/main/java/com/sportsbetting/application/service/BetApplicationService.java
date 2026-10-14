@@ -42,6 +42,7 @@ public class BetApplicationService {
         );
         return BetCommandAccepted.builder()
             .commandId(command.commandId())
+            .eventId(command.eventId())
             .betId(bet.id())
             .commandType(command.commandType())
             .acceptedAt(command.occurredAt())
@@ -57,10 +58,10 @@ public class BetApplicationService {
                 .map(betMapper::toDomain)
                 .orElseThrow(() -> new IllegalStateException("Bet disappeared after duplicate command check"));
         }
-
-        var createdBet = betMapper.toDomain(betRepository.saveAndFlush(betMapper.toEntity(bet)));
-        log.info("Created bet {} for event {}", createdBet.id(), createdBet.eventId());
-        return createdBet;
+        var betEntity = betMapper.toEntity(bet);
+        betEntity = betRepository.saveAndFlush(betEntity);
+        log.info("Created bet {} for event {}", betEntity.getId(), betEntity.getEventId());
+        return bet;
     }
 
     @Transactional(readOnly = true)

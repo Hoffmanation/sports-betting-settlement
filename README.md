@@ -36,6 +36,7 @@ A backend service for creating sports bets and asynchronously settling them agai
 - An event outcome is matched to open bets for the same event
 - A bet is settled from `OPEN` to `WON` when its selected winner matches the outcome; otherwise it becomes `LOST`
 - Settlement updates are atomic and only transition an open bet once
+- Assumes one official winner per event; identical outcome retries are ignored, while a conflicting winner is rejected with `409 Conflict`
 - Bet list pagination uses slices, returns `hasNext`, and does not calculate total counts
 
 ## Technology/Architectural Choices
@@ -47,6 +48,7 @@ A backend service for creating sports bets and asynchronously settling them agai
 - **Caching**: Redis for bet details and search results
 - **Settlement integration**: in-process RocketMQ mock broker and consumer
 - **Mapping**: MapStruct between API, domain, and persistence models
+- **Idempotency**: event outcomes are stored by `eventId`, so a repeated outcome with the same winner is a no-op and a different winner is rejected as a conflict; settlement only touches `OPEN` bets, so redelivered messages are ignored
 
 ## Project Structure
 
@@ -155,7 +157,9 @@ Bet-command consumer persists the bet to PostgreSQL
 
 POST /api/v1/event-outcomes
    ↓
-Publish outcome to event-outcomes
+Register one outcome per event; same-winner retries return 200 and conflicting winners return 409
+   ↓
+Publish new outcome to event-outcomes
    ↓
 Outcome consumer finds OPEN bets for the event
    ↓

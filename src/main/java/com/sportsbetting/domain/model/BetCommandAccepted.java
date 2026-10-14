@@ -10,6 +10,7 @@ import java.util.UUID;
 public record BetCommandAccepted(
     UUID commandId,
     UUID betId,
+    String eventId,
     BetCommandType commandType,
     Instant acceptedAt
 ) {

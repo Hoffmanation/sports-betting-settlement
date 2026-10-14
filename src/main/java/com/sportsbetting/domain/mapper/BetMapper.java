@@ -10,6 +10,7 @@ import com.sportsbetting.domain.model.BetCommandAccepted;
 import com.sportsbetting.domain.model.BetStatus;
 import com.sportsbetting.domain.model.EventOutcome;
 import com.sportsbetting.ports.jpa.entity.BetEntity;
+import com.sportsbetting.ports.jpa.entity.EventOutcomeEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -38,4 +39,11 @@ public interface BetMapper {
     BetEntity toEntity(Bet bet);
 
     EventOutcome toDomain(PublishEventOutcomeRequest request);
+
+    EventOutcome toDomain(EventOutcomeEntity entity);
+
+    @Mapping(target = "id", expression = "java(UUID.randomUUID())")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    EventOutcomeEntity toEntity(EventOutcome outcome);
 }

@@ -19,7 +19,7 @@ public class PublishEventOutcomeResponse {
     private String eventId;
 
     @Schema(example = "PUBLISHED")
-    private String status;
+    private PublishEventOutcomeStatus status;
 
     @Schema(example = "2026-09-28T09:00:00Z")
     private Instant publishedAt;

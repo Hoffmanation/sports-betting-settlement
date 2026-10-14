@@ -87,6 +87,29 @@ class EventOutcomeFlowIntegrationTest {
             """.formatted(eventId));
         assertThat(outcomeResponse.statusCode()).isEqualTo(202);
 
+        var duplicateOutcomeResponse = postJson("/api/v1/event-outcomes", """
+            {
+              "eventId": "%s",
+              "eventName": "Final",
+              "winnerId": "player-a"
+            }
+            """.formatted(eventId));
+        assertThat(duplicateOutcomeResponse.statusCode()).isEqualTo(200);
+        assertThat(duplicateOutcomeResponse.body()).contains("ALREADY_PUBLISHED");
+
+        var conflictingOutcomeResponse = postJson("/api/v1/event-outcomes", """
+            {
+              "eventId": "%s",
+              "eventName": "Final",
+              "winnerId": "player-b"
+            }
+            """.formatted(eventId));
+        assertThat(conflictingOutcomeResponse.statusCode()).isEqualTo(409);
+        assertThat(conflictingOutcomeResponse.body())
+            .contains("EVENT_OUTCOME_CONFLICT")
+            .contains("player-a")
+            .contains("player-b");
+
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
             assertThat(betApplicationService.getBet(winningBet.getBetId()).status()).isEqualTo(BetStatus.WON);
             assertThat(betApplicationService.getBet(losingBet.getBetId()).status()).isEqualTo(BetStatus.LOST);
@@ -94,6 +117,7 @@ class EventOutcomeFlowIntegrationTest {
             assertThat(betApplicationService.getBets(eventId, 0, 10).content())
                 .allMatch(bet -> bet.status() != BetStatus.OPEN);
         });
+
     }
 
     @Test
